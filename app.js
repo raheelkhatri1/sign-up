@@ -1,3 +1,6 @@
+var root = document.getElementById("root")
+
+
 var firebaseConfig = {
     apiKey: "AIzaSyCrMRSKL5jVLHCXUu6PSugxg70YgZA4Tvg",
     authDomain: "raheel-pertice.firebaseapp.com",
@@ -10,57 +13,92 @@ var firebaseConfig = {
 var provider = new firebase.auth.GoogleAuthProvider();
 firebase.initializeApp(firebaseConfig)
 
+   var email = document.getElementById("email")
+   var password = document.getElementById("password")
 
-
-
+var auth = firebase.auth()
 var db = firebase.firestore();
 
+
+
 function myfunchion() {
+    var val = document.getElementsByName("sex")
+    var gender;
+    // console.log(val)
+    for (i = 0; i < val.length; i++) {
+        // console.log(val[i].checked)
+        if (val[i].checked) {
+            gender = val[i].value
+        }
+    }
+
     // Extract values from the HTML elements
-    var data = {
-        first: document.getElementById("first_name").value,
-        last: document.getElementById("sur_name").value,
-        gmail: document.getElementById("gmail").value,
-        password: document.getElementById("password").value,
-        day: document.getElementById("day").value,
-        month: document.getElementById("month").value,
-        year: document.getElementById("year").value,
-        sex: document.getElementById("sex").value
-    };
     
 
-    console.log(data);
 
-    // Add the data to Firestore
-    db.collection("users").add(data)
-        .then((docRef) => {
-            console.log("Document written with ID: ", docRef.id);
+    auth.createUserWithEmailAndPassword(email.value, password.value)
+        .then((userCredential) => {
+            // Signed in 
+            var user = userCredential.user;
+            // ...
+            var data = {
+                first: document.getElementById("first_name").value,
+                last: document.getElementById("sur_name").value,
+                gmail: document.getElementById("email").value,
+                password: document.getElementById("password").value,
+                day: document.getElementById("day").value,
+                month: document.getElementById("month").value,
+                year: document.getElementById("year").value,
+                sex: gender,
+                uid : user.uid
+        
+            };
+            db.collection("users").add(data)
+                .then((docRef) => {
+                    console.log("Document written with ID: ", docRef.id);
+                })
+                .catch((error) => {
+                    console.error("Error adding document: ", error);
+                });
         })
         .catch((error) => {
-            console.error("Error adding document: ", error);
+            var errorCode = error.code;
+            var errorMessage = error.message;
+            // ..
+            console.log(errorMessage, "gg")
         });
+
 }
 
 function login() {
-    var data = {
-        gmail: document.getElementById("gmail").value,
-        password: document.getElementById("password").value,
-    }
-    db.collection("users")
-        .where("gmail", "==", data)
-        .get()
-        .then((querySnapshot) => {
-            if (querySnapshot.empty) {
-                console.log("No matching documents.");
-                return;
-            }
+    
+       var email = document.getElementById("gmail").value
+       var password = document.getElementById("password").value
 
-            // Results ko iterate karna
-            querySnapshot.forEach((doc) => {
-                console.log(doc.id , doc.data());
-            });
+    auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // Signed in
+            var user = userCredential.user;
+            // ...
+            console.log("yes",user)
+            db.collection("users").where("uid", "==", user.uid)
+    .get()
+    .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+            // doc.data() is never undefined for query doc snapshots
+            console.log(doc.id, " => ", doc.data())
+           var data_login = document.createTextNode( doc.data().gmail)
+           root.appendChild(data_login)
+        });
+    })
+    .catch((error) => {
+        console.log("Error getting documents: ", error);
+    });
+            
         })
         .catch((error) => {
-            console.error("Error getting documents: ", error);
+            var errorCode = error.code;
+            var errorMessage = error.message;
+
         });
 }
